@@ -17,7 +17,7 @@ Alternative for httrack
 - (not poc) filter unnecessary files from har
 - (not poc) save duplicate content only once
 
-## Server webpage ##
+## Server ##
 - match based on url path, method
 - not poc: match based on request body, based on get params, based on cookies... configurable by request (extend har format?)
 
