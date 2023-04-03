@@ -2,27 +2,31 @@
 Alternative for httrack
 
 # concept #
-## Client ##
+## (not poc) Client ##
 - Responsible for visiting webpages and fetching raw data.
 - cli tool
 - run selenium and collect har of webpage
-- (not poc) make rules for which urls to visit automatically
-- (not poc) prompt user to fill in captchas
+- (enchantment) make rules for which urls to visit automatically
+- (enchantment) prompt user to fill in captchas
+- (enchantment) change browser size, scroll page etc to ensure dynamic content loads
+- (enchantment) ability for users to just give their own behavior client must run
 
 ## Archiver ##
 - rewrite domains in har content 
    - https://site.com/xyz -> /site.com/xyz
    - /xyz -> /site.com/xyz
    - (not poc) is there risk of collisions?
-- (not poc) break har into files (?)
-- (not poc) methods for rewriting sensitive information
-- (not poc) sha checks, domain checks...?
-- (not poc) filter unnecessary files from har
-- (not poc) save duplicate content only once
+- (enchantment) break har into files (?)
+- (enchantment) methods for rewriting sensitive information
+- (enchantment) sha checks, domain checks...?
+- (enchantment) filter unnecessary files from har
+- (enchantment) save duplicate content only once
+- (enchantment) consider differenc file format from har
 
 ## Server ##
 - match based on url path, method
-- not poc: match based on request body, based on get params, based on cookies... configurable by request (extend har format?)
+- (enchantment): match based on request body, based on get params, based on cookies... configurable by request (extend har format?)
+- (enchantment) serve multiple har files
 
 # Tutorials #
 ## How to deploy mirror of the webpage ##
@@ -56,7 +60,4 @@ Presumptions:
 TODO
 
 ## Including your own dynamic content to the mirrored website ##
-Ways to implement this:
-- proxy server which intercepts requests to jstrack server and populates/replaces it with required data
-- import jsrack as default middleware into some http routing libraries (not very programming language agnostic)
-
+Configure http-proxy for intercepting and mutating requests to jstrack
