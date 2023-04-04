@@ -61,3 +61,6 @@ TODO
 
 ## Including your own dynamic content to the mirrored website ##
 Configure http-proxy for intercepting and mutating requests to jstrack
+
+# Contribute #
+This project follows [semver] and [conventional commits]
