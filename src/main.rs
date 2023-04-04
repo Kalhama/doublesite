@@ -1,22 +1,21 @@
-use std::net::SocketAddr;
-use std::path::Path;
-
 use bytes::Bytes;
 use har::v1_2::{Entries, Log};
 use http_body_util::{BodyExt, Empty, Full};
-use hyper::http::response;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::Uri;
 use hyper::{body::Incoming as IncomingBody, Method, Request, Response, StatusCode};
+use once_cell::sync::OnceCell;
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, hyper::Error>;
 
+static HAR_LOG: OnceCell<har::v1_2::Log> = OnceCell::new();
+
 fn get_har_log() -> har::v1_2::Log {
-    // TODO this function is painfully slow and its called many times ;(
     match har::from_path("github.har") {
         Ok(spec) => match spec.log {
             har::Spec::V1_2(log) => log,
@@ -57,9 +56,9 @@ fn uri_to_har_url(uri: &Uri) -> String {
 async fn response_examples(
     req: Request<IncomingBody>,
 ) -> Result<hyper::Response<http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>>> {
-    let har_log = get_har_log();
+    let har_log = HAR_LOG.get().unwrap();
 
-    let response = match_har_response(&req, &har_log);
+    let response = match_har_response(&req, har_log);
 
     let mut builder = Response::builder();
 
@@ -113,6 +112,8 @@ fn empty() -> BoxBody {
 #[tokio::main]
 async fn main() -> Result<()> {
     pretty_env_logger::init();
+
+    HAR_LOG.set(get_har_log()).unwrap();
 
     let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
 
