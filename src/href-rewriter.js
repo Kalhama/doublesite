@@ -9,14 +9,14 @@ const documentElement = document.documentElement
 
 /**
  * 
- * @param {String} hostname 
+ * @param {String} href 
  * @returns {URL}
  */
-const href_to_url = (hostname) => {
+const string_to_url = (href) => {
   try {
-    return new URL(hostname)
+    return new URL(href)
   } catch {
-    return new URL(hostname, location.hostname)
+    return new URL(href, location.hostname)
   }
 }
 
@@ -28,7 +28,7 @@ const href_to_url = (hostname) => {
 const rewrite_urls = (target) => {
   let location = document.location
   target.querySelectorAll('[href]').forEach(element => {
-    let href_url = href_to_url(element.href)
+    let href_url = request_url_to_url(element.href)
       
     if (href_url.origin != location.origin) {
       // link is pointing to external resource, need to convert it to point to jstrack
