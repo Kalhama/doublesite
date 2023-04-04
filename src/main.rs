@@ -32,7 +32,7 @@ fn match_method(req: &Request<IncomingBody>, entry: &Entries) -> bool {
 fn match_url(req: &Request<IncomingBody>, entry: &Entries) -> bool {
     let request_url = uri_to_har_url(req.uri());
     let har_uri = entry.request.url.as_str();
-    let is_match = har_uri.contains(&request_url);
+    let is_match = request_url.contains(&har_uri);
 
     is_match
 }
