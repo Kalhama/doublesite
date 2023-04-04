@@ -39,7 +39,10 @@ fn match_url(req: &Request<IncomingBody>, entry: &Entries) -> bool {
 
 fn match_har_response(req: &Request<IncomingBody>, har_log: &Log) -> Option<har::v1_2::Response> {
     // TODO refactor?
-    let entry = har_log.entries.iter().find(|entry| match_url(req, entry));
+    let entry = har_log
+        .entries
+        .iter()
+        .find(|entry| match_url(req, entry) && match_method(req, entry));
 
     match entry {
         Some(entry) => Some(entry.response.clone()),
