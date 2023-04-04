@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 
 use bytes::Bytes;
-use har::v1_2::{Entries, Headers, Log};
+use har::v1_2::{Entries, Log};
 use http_body_util::{BodyExt, Empty, Full};
 use hyper::http::response;
 use hyper::server::conn::http1;
@@ -15,27 +15,15 @@ type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, hyper::Error>;
 
-// static INDEX: &[u8] = b"<a href=\"test.html\">test.html</a>";
-// static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
-// static NOTFOUND: &[u8] = b"Not Found";
-// static POST_DATA: &str = r#"{"original": "data"}"#;
-// static URL: &str = "http://127.0.0.1:8080/test.html";
-
 fn get_har_log() -> har::v1_2::Log {
-    use std::time::Instant;
-    let now = Instant::now();
-
     // TODO this function is painfully slow and its called many times ;(
-    let log = match har::from_path("github.har") {
+    match har::from_path("github.har") {
         Ok(spec) => match spec.log {
             har::Spec::V1_2(log) => log,
             har::Spec::V1_3(_) => panic!("unsupported type"), // TODO support for also v1.3
         },
         _ => panic!("no file"),
-    };
-    let elapsed = now.elapsed();
-    println!("get_har_log took: {:.2?}", elapsed.as_millis());
-    log
+    }
 }
 
 fn match_method(req: &Request<IncomingBody>, entry: &Entries) -> bool {
@@ -43,30 +31,17 @@ fn match_method(req: &Request<IncomingBody>, entry: &Entries) -> bool {
 }
 
 fn match_url(req: &Request<IncomingBody>, entry: &Entries) -> bool {
-    use std::time::Instant;
-    let now = Instant::now();
-
     let request_url = uri_to_har_url(req.uri());
     let har_uri = entry.request.url.as_str();
     let is_match = har_uri.contains(&request_url);
 
-    // println!(
-    //     "request url: {} har_uri: {} is_match: {}",
-    //     request_url, har_uri, is_match
-    // );
-    let elapsed = now.elapsed();
-    println!("match_url took: {:.2?}", elapsed.as_millis());
     is_match
 }
 
 fn match_har_response(req: &Request<IncomingBody>, har_log: &Log) -> Option<har::v1_2::Response> {
-    use std::time::Instant;
-    let now = Instant::now();
-    // TODO match based
+    // TODO refactor?
     let entry = har_log.entries.iter().find(|entry| match_url(req, entry));
 
-    let elapsed = now.elapsed();
-    println!("match_har_response took: {:.2?}", elapsed.as_millis());
     match entry {
         Some(entry) => Some(entry.response.clone()),
         None => None,
@@ -91,10 +66,7 @@ async fn response_examples(
     match response {
         Some(response) => {
             // status
-            let status = response.status;
-            builder = builder.status(status as u16);
-
-            // TODO refactor to use header_mut etc functs
+            builder = builder.status(response.status as u16);
 
             // TODO redirectURL field in har?
 
@@ -104,9 +76,9 @@ async fn response_examples(
                 // filter content encoding away. har is decoded
                 let banned_headers = vec!["content-encoding", "content-length"];
                 if !banned_headers.contains(&header.name.as_str().to_lowercase().as_str()) {
-                    // println!("{}", header.value.clone().as_str());
-                    builder =
-                        builder.header(header.name.clone().as_str(), header.value.clone().as_str());
+                    let key = header.name.clone();
+                    let value = header.value.clone();
+                    builder = builder.header(key, value);
                 }
             }
 
