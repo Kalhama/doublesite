@@ -7,16 +7,28 @@ use hyper::Uri;
 use hyper::{body::Incoming as IncomingBody, Method, Request, Response, StatusCode};
 use once_cell::sync::OnceCell;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use tokio::net::TcpListener;
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, hyper::Error>;
 
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long, default_value = "8080")]
+    port: String,
+
+    har_file_path: std::path::PathBuf,
+}
+
 static HAR_LOG: OnceCell<har::v1_2::Log> = OnceCell::new();
 
-fn get_har_log() -> har::v1_2::Log {
-    match har::from_path("github.har") {
+fn get_har_log(path: PathBuf) -> har::v1_2::Log {
+    match har::from_path(path) {
         Ok(spec) => match spec.log {
             har::Spec::V1_2(log) => log,
             har::Spec::V1_3(_) => panic!("unsupported type"), // TODO support for also v1.3
@@ -114,11 +126,13 @@ fn empty() -> BoxBody {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Args::parse();
+
     pretty_env_logger::init();
 
-    HAR_LOG.set(get_har_log()).unwrap();
+    HAR_LOG.set(get_har_log(args.har_file_path)).unwrap();
 
-    let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
+    let addr: SocketAddr = format!("127.0.0.1:{}", args.port).parse().unwrap();
 
     let listener = TcpListener::bind(&addr).await?;
     println!("Listening on http://{}", addr);
