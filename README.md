@@ -8,8 +8,8 @@ This type of content is becoming more and more dominant with client side renderi
 
 ## Installation ##
 1. [Install rust](https://rustup.rs/)
-2. Run `cargo install --git https://github.com/Kalhama/doublesite.git`
-    - please mind that the software is still in under contruction and api is excepted to break
+2. Run `cargo install doublesite`
+    - please bear in mind the software is still in under contruction and api is excepted to break
 3. Run `doublesite --help`
 
 ## Usage ##

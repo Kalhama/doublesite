@@ -284,7 +284,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "clap",
- "har",
+ "har-v0-8-1",
  "http-body-util",
  "hyper",
  "once_cell",
@@ -402,9 +402,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "har"
+name = "har-v0-8-1"
 version = "0.8.1"
-source = "git+https://github.com/Kalhama/har-rs.git#4142aa264e259250b02a5f84cf4623e80c1db6dd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36b6b9bd7e8957e342e47c95cddde36e57f4082333916ecceec9e585488692ff"
 dependencies = [
  "serde",
  "serde_json",

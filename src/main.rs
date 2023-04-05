@@ -1,5 +1,6 @@
 use bytes::Bytes;
 use har::v1_2::{Entries, Log};
+use har_v0_8_1 as har;
 use http_body_util::{BodyExt, Empty, Full};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
