@@ -279,6 +279,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "doublesite"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "clap",
+ "har",
+ "http-body-util",
+ "hyper",
+ "once_cell",
+ "pretty_env_logger",
+ "regex",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -603,22 +619,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "445dde2150c55e483f3d8416706b97ec8e8237c307e5b7b4b8dd15e6af2a0730"
 dependencies = [
  "wasm-bindgen",
-]
-
-[[package]]
-name = "jstrack"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "clap",
- "har",
- "http-body-util",
- "hyper",
- "once_cell",
- "pretty_env_logger",
- "regex",
- "tokio",
- "url",
 ]
 
 [[package]]
