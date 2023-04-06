@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 description = "Alternative for httrack"
 license = "Unlicense"
+documentation = "https://docs.rs/crate/doublesite"
+homepage = "https://github.com/Kalhama/doublesite"
+repository = "https://github.com/Kalhama/doublesite"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,3 +21,6 @@ pretty_env_logger = "0.4.0"
 regex = "1.7.3"
 tokio = { version = "1.27.0", features = ["full"] }
 url = "2.3.1"
+
+[package.metadata.release]
+pre-release-hook = ["git-cliff", "-p", "CHANGELOG.md", "-u", "--tag", "{{version}}"]
