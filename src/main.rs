@@ -1,7 +1,9 @@
 use bytes::Bytes;
-use har::v1_2::{Entries, Log};
+use clap::Parser;
+use har::v1_2::Entries;
 use har_v0_8_1 as har;
 use http_body_util::{BodyExt, Empty, Full};
+use hyper::http::{HeaderName, HeaderValue};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::Uri;
@@ -9,13 +11,12 @@ use hyper::{body::Incoming as IncomingBody, Method, Request, Response, StatusCod
 use once_cell::sync::OnceCell;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 use tokio::net::TcpListener;
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, hyper::Error>;
-
-use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -50,7 +51,9 @@ fn match_url(req: &Request<IncomingBody>, entry: &Entries) -> bool {
     is_match
 }
 
-fn match_har_response(req: &Request<IncomingBody>, har_log: &Log) -> Option<har::v1_2::Response> {
+fn match_har_response(req: &Request<IncomingBody>) -> Option<har::v1_2::Response> {
+    let har_log = HAR_LOG.get().unwrap();
+
     // TODO refactor?
     let entry = har_log
         .entries
@@ -69,47 +72,62 @@ fn uri_to_har_url(uri: &Uri) -> String {
     format!("https://{}", res) // TODO warning naive https
 }
 
-async fn response_examples(
+fn not_found_response(
+) -> Result<hyper::Response<http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>>> {
+    Ok(Response::builder()
+        .status(StatusCode::NOT_FOUND)
+        .body(empty())
+        .unwrap())
+}
+
+fn har_response(
+    response: har::v1_2::Response,
+) -> Result<hyper::Response<http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>>> {
+    // status
+    let mut builder = Response::builder().status(response.status as u16);
+    let headers = builder.headers_mut().unwrap();
+
+    // TODO redirectURL field in har?
+
+    // headers
+    response
+        .headers
+        .iter()
+        .map(|header| {
+            let key = header.name.clone();
+            let value = header.value.clone();
+            (key, value)
+        })
+        .filter(|header| {
+            // todo more filters required?
+            // filter content encoding away. har is decoded
+            let banned_headers = vec!["content-encoding", "content-length"];
+            banned_headers.contains(&header.1.as_str())
+        })
+        .for_each(|header| {
+            headers.insert(
+                HeaderName::from_str(header.0.as_str()).unwrap(),
+                HeaderValue::from_str(header.1.as_str()).unwrap(),
+            );
+        });
+
+    // body
+    // TODO rewrite urls in content
+    let body = response.content.text.clone();
+    match body {
+        Some(body) => Ok(builder.body(full(body)).unwrap()),
+        None => Ok(builder.body(empty()).unwrap()),
+    }
+}
+
+async fn response(
     req: Request<IncomingBody>,
 ) -> Result<hyper::Response<http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>>> {
-    let har_log = HAR_LOG.get().unwrap();
-
-    let response = match_har_response(&req, har_log);
-
-    let mut builder = Response::builder();
+    let response = match_har_response(&req);
 
     match response {
-        Some(response) => {
-            // status
-            builder = builder.status(response.status as u16);
-
-            // TODO redirectURL field in har?
-
-            // headers
-            for header in response.headers.iter() {
-                // todo more filters required?
-                // filter content encoding away. har is decoded
-                let banned_headers = vec!["content-encoding", "content-length"];
-                if !banned_headers.contains(&header.name.as_str().to_lowercase().as_str()) {
-                    let key = header.name.clone();
-                    let value = header.value.clone();
-                    builder = builder.header(key, value);
-                }
-            }
-
-            // body
-            // TODO rewrite urls in content
-            let body = response.content.text.clone();
-            match body {
-                Some(body) => Ok(builder.body(full(body)).unwrap()),
-                None => Ok(builder.body(empty()).unwrap()),
-            }
-        }
-        None => {
-            let mut not_found = Response::new(empty());
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
-        }
+        Some(response) => har_response(response),
+        None => not_found_response(),
     }
 }
 
@@ -141,7 +159,7 @@ async fn main() -> Result<()> {
         let (stream, _) = listener.accept().await?;
 
         tokio::task::spawn(async move {
-            let service = service_fn(move |req| response_examples(req));
+            let service = service_fn(move |req| response(req));
 
             if let Err(err) = http1::Builder::new()
                 .serve_connection(stream, service)
